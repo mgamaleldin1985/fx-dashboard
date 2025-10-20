@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FX Performance Dashboard — v1 Compact</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; }
+        #root { width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+        
+        const Info = ({className, onMouseEnter, onMouseLeave}) => (
+            <svg className={className} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+        );
+        const CheckCircle = ({className}) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+        );
+        const AlertCircle = ({className}) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+        );
+        const TrendingUp = ({className}) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                <polyline points="17 6 23 6 23 12"/>
+            </svg>
+        );
+        
+        const FXDashboard = () => {
+          const [hoveredTooltip, setHoveredTooltip] = useState(null);
+
+          const metrics = {
+            thisMonth: {
+              pnl: 68.31,
+              pnlTooltip: 'Driven by: SME segment (+5.4%), Retail exceptional growth (+19.3%), USD strong performance (+22.9%), and increased Wio to Wio transactions reducing costs.',
+              volume: 14.56,
+              volumeTooltip: 'Key contributors: Retail segment growth (+22.1%), SME steady performance (+9.0%), increased cross-border activity, and higher USD corridor volumes.',
+              transactions: 357,
+              transactionsTooltip: 'Growth from: Retail customer acquisition (+19.8%), SME transaction frequency improvements (+4.9%), and enhanced digital onboarding processes.'
+            },
+            lastMonth: { pnl: 62.59, volume: 13.30, transactions: 356 }
+          };
+
+          const segments = [
+            { 
+              name: 'SME', pnl: 41.48, pnlGrowth: 5.38, volume: 8.94, volumeGrowth: 8.97,
+              transactions: 39, transactionsGrowth: 4.91, avgTicket: 229.23,
+              status: 'good', type: 'direction', hasTransactions: true, hasPaymentMethod: true,
+              paymentMethods: [{ name: 'Wio to Wio', share: 65 }, { name: 'SWIFT', share: 35 }],
+              splits: [
+                { name: 'Inward', pnl: 21.71, volume: 3.83, share: 52.3 },
+                { name: 'Outward', pnl: 19.78, volume: 4.53, share: 47.7 }
+              ]
+            },
+            { 
+              name: 'Retail', pnl: 21.05, pnlGrowth: 19.25, volume: 4.16, volumeGrowth: 22.06,
+              transactions: 48, transactionsGrowth: 19.76, avgTicket: 86.62,
+              status: 'excellent', type: 'direction', hasTransactions: true, hasPaymentMethod: true,
+              paymentMethods: [{ name: 'Wio to Wio', share: 72 }, { name: 'SWIFT', share: 28 }],
+              splits: [
+                { name: 'Inward', pnl: 7.54, volume: 1.47, share: 35.8 },
+                { name: 'Outward', pnl: 13.51, volume: 1.95, share: 64.2 }
+              ]
+            },
+            { 
+              name: 'Cards', pnl: 5.78, pnlGrowth: 6.56, volume: 0.66, volumeGrowth: 8.69,
+              avgTicket: 2.54, status: 'good', type: 'customer', hasTransactions: false, hasPaymentMethod: false,
+              paymentMethods: [],
+              splits: [
+                { name: 'Retail', pnl: 2.83, volume: 0.15, share: 49.0 },
+                { name: 'SME', pnl: 1.21, volume: 0.44, share: 21.0 },
+                { name: 'Staff', pnl: 1.73, volume: 0.07, share: 30.0 }
+              ]
+            }
+          ];
+
+          const currencies = [
+            { code: 'USD', growth: 22.86 },
+            { code: 'EUR', growth: 7.33 },
+            { code: 'GBP', growth: 13.32 },
+            { code: 'INR', growth: -27.66 },
+            { code: 'SAR', growth: -10 }
+          ];
+
+          const direction = {
+            inward: { pnl: 33.12, pnlShare: 48.45, volume: 7.36 },
+            outward: { pnl: 35.29, pnlShare: 51.55, volume: 7.36 }
+          };
+
+          const calculateGrowth = (current, previous) => (((current - previous) / previous) * 100).toFixed(1);
+
+          const currencyText = () => (
+            <div className="text-right text-sm leading-6">
+              <div className="font-semibold flex flex-wrap gap-x-3 justify-end">
+                {currencies.map(c => (
+                  <span key={c.code} className="text-slate-200">
+                    {c.code}
+                    {" "}
+                    <span className={c.growth >= 0 ? "text-green-400 font-semibold" : "text-red-400 font-semibold"}>
+                      {c.growth > 0 ? "+" : ""}{c.growth}%
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          );
+
+          const paymentText = (segment) => (
+            segment.hasPaymentMethod && segment.paymentMethods.length ? (
+              <div className="text-right text-xs mt-1">
+                <span className="text-slate-200 font-bold">Payment Method:</span>{" "}
+                <span className="text-slate-300">
+                  {segment.paymentMethods.map((m, i) => (
+                    <span key={m.name}>
+                      {m.name} {m.share}%{i < segment.paymentMethods.length - 1 ? ", " : ""}
+                    </span>
+                  ))}
+                </span>
+              </div>
+            ) : null
+          );
+
+          const pnlGrowth = calculateGrowth(metrics.thisMonth.pnl, metrics.lastMonth.pnl);
+          const volumeGrowth = calculateGrowth(metrics.thisMonth.volume, metrics.lastMonth.volume);
+
+          return (
+            <div className="w-full h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 overflow-auto">
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold text-white mb-2">FX Performance Overview</h1>
+                <p className="text-slate-400">October 2025 vs September 2025 (Same Period)</p>
+              </div>
+
+              {/* KPI row */}
+              <div className="flex gap-3 mb-5">
+                <div className="bg-slate-800 rounded-lg p-4 border border-slate-700 shadow-lg flex-1">
+                  <div className="flex justify-between items-start mb-1">
+                    <div className="flex items-center gap-1">
+                      <span className="text-slate-300 text-sm font-semibold">Total P&L</span>
+                      <div className="relative">
+                        <Info className="w-3 h-3 text-slate-400 cursor-help"
+                          onMouseEnter={() => setHoveredTooltip('pnl')}
+                          onMouseLeave={() => setHoveredTooltip(null)}
+                        />
+                        {hoveredTooltip === 'pnl' && (
+                          <div className="absolute left-0 top-5 z-50 w-64 bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm text-slate-200 shadow-xl">
+                            {metrics.thisMonth.pnlTooltip}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <TrendingUp className="w-5 h-5 text-green-400" />
+                  </div>
+                  <div className="text-3xl font-bold text-white mb-2">AED {metrics.thisMonth.pnl}M</div>
+                  <div className="flex items-center gap-2 text-sm mb-3">
+                    <span className="text-green-400 font-semibold">+{pnlGrowth}%</span>
+                    <span className="text-slate-300">from AED {metrics.lastMonth.pnl}M</span>
+                  </div>
+                  
+                  <div className="border-t border-slate-600 pt-3 mt-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-slate-900/50 rounded p-2">
+                        <div className="text-slate-300 text-xs font-semibold mb-1">Inward</div>
+                        <div className="text-white text-base font-bold">AED {direction.inward.pnl}M</div>
+                        <div className="text-green-400 text-xs">+5.2%</div>
+                        <div className="text-slate-400 text-xs">from AED 31.48M</div>
+                      </div>
+                      <div className="bg-slate-900/50 rounded p-2">
+                        <div className="text-slate-300 text-xs font-semibold mb-1">Outward</div>
+                        <div className="text-white text-base font-bold">AED {direction.outward.pnl}M</div>
+                        <div className="text-green-400 text-xs">+13.1%</div>
+                        <div className="text-slate-400 text-xs">from AED 31.20M</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-800 rounded-lg p-4 border border-slate-700 shadow-lg flex-1">
+                  <div className="flex justify-between items-start mb-1">
+                    <div className="flex items-center gap-1">
+                      <span className="text-slate-300 text-sm font-semibold">Volume</span>
+                      <div className="relative">
+                        <Info className="w-3 h-3 text-slate-400 cursor-help"
+                          onMouseEnter={() => setHoveredTooltip('volume')}
+                          onMouseLeave={() => setHoveredTooltip(null)}
+                        />
+                        {hoveredTooltip === 'volume' && (
+                          <div className="absolute left-0 top-5 z-50 w-64 bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm text-slate-200 shadow-xl">
+                            {metrics.thisMonth.volumeTooltip}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <TrendingUp className="w-5 h-5 text-green-400" />
+                  </div>
+                  <div className="text-3xl font-bold text-white mb-2">AED {metrics.thisMonth.volume}bn</div>
+                  <div className="flex items-center gap-2 text-sm mb-3">
+                    <span className="text-green-400 font-semibold">+{volumeGrowth}%</span>
+                    <span className="text-slate-300">from AED {metrics.lastMonth.volume}bn</span>
+                  </div>
+                  
+                  <div className="border-t border-slate-600 pt-3 mt-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-slate-900/50 rounded p-2">
+                        <div className="text-slate-300 text-xs font-semibold mb-1">Inward</div>
+                        <div className="text-white text-base font-bold">AED {direction.inward.volume}bn</div>
+                        <div className="text-green-400 text-xs">+8.7%</div>
+                        <div className="text-slate-400 text-xs">from AED 6.77bn</div>
+                      </div>
+                      <div className="bg-slate-900/50 rounded p-2">
+                        <div className="text-slate-300 text-xs font-semibold mb-1">Outward</div>
+                        <div className="text-white text-base font-bold">AED {direction.outward.volume}bn</div>
+                        <div className="text-green-400 text-xs">+10.3%</div>
+                        <div className="text-slate-400 text-xs">from AED 6.67bn</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-800 rounded-lg p-4 border border-slate-700 shadow-lg flex-1">
+                  <div className="flex justify-between items-start mb-1">
+                    <div className="flex items-center gap-1">
+                      <span className="text-slate-300 text-sm font-semibold">Transactions</span>
+                      <div className="relative">
+                        <Info className="w-3 h-3 text-slate-400 cursor-help"
+                          onMouseEnter={() => setHoveredTooltip('transactions')}
+                          onMouseLeave={() => setHoveredTooltip(null)}
+                        />
+                        {hoveredTooltip === 'transactions' && (
+                          <div className="absolute left-0 top-5 z-50 w-64 bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm text-slate-200 shadow-xl">
+                            {metrics.thisMonth.transactionsTooltip}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <TrendingUp className="w-5 h-5 text-green-400" />
+                  </div>
+                  <div className="text-3xl font-bold text-white mb-2">{metrics.thisMonth.transactions}K</div>
+                  <div className="flex items-center gap-2 text-sm mb-3">
+                    <span className="text-green-400 font-semibold">+0.3%</span>
+                    <span className="text-slate-300">from {metrics.lastMonth.transactions}K</span>
+                  </div>
+                  
+                  <div className="border-t border-slate-600 pt-3 mt-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-slate-900/50 rounded p-2">
+                        <div className="text-slate-300 text-xs font-semibold mb-1">Inward</div>
+                        <div className="text-white text-base font-bold">204K</div>
+                        <div className="text-green-400 text-xs">+2.1%</div>
+                        <div className="text-slate-400 text-xs">from 200K</div>
+                      </div>
+                      <div className="bg-slate-900/50 rounded p-2">
+                        <div className="text-slate-300 text-xs font-semibold mb-1">Outward</div>
+                        <div className="text-white text-base font-bold">153K</div>
+                        <div className="text-red-400 text-xs">-1.9%</div>
+                        <div className="text-slate-400 text-xs">from 156K</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Full-width Segment Performance */}
+              <div className="mb-6">
+                <div className="bg-slate-800 rounded-lg p-6 border border-slate-700 shadow-lg">
+                  <h2 className="text-xl font-bold text-white mb-4">Segment Performance</h2>
+                  <div className="space-y-4">
+                    {segments.map((segment) => (
+                      <div key={segment.name} className="bg-slate-900 rounded-lg p-4">
+                        {/* Header with right-aligned currencies + payment text */}
+                        <div className="flex justify-between items-start mb-3 gap-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-white font-semibold text-xl">{segment.name}</span>
+                            <div className={(segment.status === 'excellent' || segment.status === 'good' ? 'bg-green-500' : 'bg-red-500') + " rounded-full p-1 text-white"}>
+                              {segment.status === 'excellent' || segment.status === 'good' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                            </div>
+                            <div className="text-slate-100 text-base">
+                              P&L: <span className="text-white font-bold text-lg">AED {segment.pnl}M</span>
+                              <span className="text-green-400 ml-2 font-bold text-base">+{segment.pnlGrowth}%</span>
+                              <span className="text-slate-200 ml-2 text-base font-medium">(SPLM: AED {(segment.pnl / (1 + segment.pnlGrowth/100)).toFixed(2)}M)</span>
+                            </div>
+                          </div>
+                          <div>
+                            {/* currencies in text, keep colors */}
+                            <div className="text-right text-sm font-semibold flex flex-wrap gap-x-3 justify-end">
+                              {currencies.map(c => (
+                                <span key={c.code} className="text-slate-200">
+                                  {c.code}{" "}
+                                  <span className={c.growth >= 0 ? "text-green-400" : "text-red-400"}>
+                                    {c.growth > 0 ? "+" : ""}{c.growth}%
+                                  </span>
+                                </span>
+                              ))}
+                            </div>
+                            {/* payment method in text under currencies */}
+                            {segment.hasPaymentMethod && (
+                              <div className="text-right text-xs mt-1">
+                                <span className="text-slate-200 font-bold">Payment Method:</span>{" "}
+                                <span className="text-slate-300">
+                                  {segment.paymentMethods.map((pm, idx) => (
+                                    <span key={pm.name}>
+                                      {pm.name} {pm.share}%{idx < segment.paymentMethods.length - 1 ? ", " : ""}
+                                    </span>
+                                  ))}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Stats row only (right-side panel removed => more compact) */}
+                        <div className="grid grid-cols-3 md:grid-cols-4 gap-3 mb-3">
+                          <div>
+                            <div className="text-slate-100 text-sm mb-1 font-bold">Volume</div>
+                            <div className="text-white font-bold text-lg">AED {segment.volume}bn</div>
+                            <div className="text-green-400 text-sm font-bold">+{segment.volumeGrowth}%</div>
+                          </div>
+                          {segment.hasTransactions && (
+                            <div>
+                              <div className="text-slate-100 text-sm mb-1 font-bold">Transactions</div>
+                              <div className="text-white font-bold text-lg">{segment.transactions}K</div>
+                              <div className="text-green-400 text-sm font-bold">+{segment.transactionsGrowth}%</div>
+                            </div>
+                          )}
+                          <div>
+                            <div className="text-slate-100 text-sm mb-1 font-bold">Avg Ticket</div>
+                            <div className="text-white font-bold text-lg">AED {segment.avgTicket}K</div>
+                          </div>
+                        </div>
+
+                        {/* Last Month section */}
+                        <div className="border-t border-slate-600 pt-3 mt-3 mb-3">
+                          <div className="text-slate-100 text-base mb-2 font-bold">Last Month (SPLM)</div>
+                          <div className={(segment.hasTransactions ? 'grid-cols-3' : 'grid-cols-2') + " grid gap-3 bg-slate-800 rounded-lg p-3"}>
+                            <div>
+                              <div className="text-slate-100 text-sm font-bold mb-1">Volume</div>
+                              <div className="text-white text-base font-bold">AED {(segment.volume / (1 + segment.volumeGrowth/100)).toFixed(2)}bn</div>
+                            </div>
+                            {segment.hasTransactions && (
+                              <div>
+                                <div className="text-slate-100 text-sm font-bold mb-1">Transactions</div>
+                                <div className="text-white text-base font-bold">{(segment.transactions / (1 + segment.transactionsGrowth/100)).toFixed(1)}K</div>
+                              </div>
+                            )}
+                            <div>
+                              <div className="text-slate-100 text-sm font-bold mb-1">Avg Ticket</div>
+                              <div className="text-white text-base font-bold">AED {(segment.avgTicket / 1.03).toFixed(2)}K</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Splits */}
+                        <div className="border-t border-slate-600 pt-3 mt-3">
+                          <div className="text-slate-100 text-base mb-3 font-bold">
+                            {segment.type === 'direction' ? 'Direction Split' : 'Customer Split'}
+                          </div>
+                          <div className="space-y-2">
+                            {segment.splits.map((split) => (
+                              <div key={split.name} className="flex justify-between items-center bg-slate-800 rounded-lg px-4 py-3 border border-slate-600">
+                                <div className="flex-1">
+                                  <div className="text-white text-base font-bold mb-1">{split.name}</div>
+                                  <div className="text-slate-100 text-sm font-medium">
+                                    AED {split.pnl}M • AED {split.volume}bn
+                                  </div>
+                                </div>
+                                <div className="text-white text-base font-bold">{split.share}%</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Attention section (kept) */}
+              <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-5">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-6 h-6 text-red-400 flex-shrink-0 mt-1" />
+                  <div className="flex-1">
+                    <h3 className="text-red-300 font-bold text-lg mb-2">Areas Requiring Attention and Actions</h3>
+                    <div className="space-y-3">
+                      <div className="bg-slate-900/50 rounded p-3">
+                        <div className="text-slate-300 font-semibold mb-1">Currency: INR & SAR Recovery Plan</div>
+                        <div className="text-slate-400 text-sm">Immediate actions: (1) Partner with 3 regional banks for competitive pricing by Nov 15, (2) Launch targeted marketing campaign for India/Saudi corridors, (3) Reduce processing time from 48hrs to 24hrs, (4) Offer promotional zero-fee period for high-value transfers. Target: Return to positive growth within 6 weeks.</div>
+                      </div>
+                      <div className="bg-slate-900/50 rounded p-3">
+                        <div className="text-slate-300 font-semibold mb-1">Wio to Wio Expansion Opportunity</div>
+                        <div className="text-slate-400 text-sm">Action plan: Current 65-72% adoption shows strong potential. Actions: (1) Incentivize remaining clients with instant settlement messaging, (2) Target 80% Wio-to-Wio by Q1 2026 to reduce SWIFT costs by AED 2.5M annually, (3) Launch API integration for top 20 SME clients by December. Expected P&L impact: +AED 1.2M monthly.</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<FXDashboard />);
+    </script>
+</body>
+</html>
